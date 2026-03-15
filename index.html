@@ -3,28 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Supply Chain Financial Statement Analyzer</title>
+  <title>Supply Chain Metrics Analyzer</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.min.mjs" type="module"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <style>
     :root {
-      --bg: #0b1020;
-      --panel: #121933;
-      --panel-2: #1a2346;
-      --text: #eef2ff;
-      --muted: #a9b4d0;
-      --accent: #7c9cff;
-      --good: #30c48d;
-      --warn: #f5b83d;
-      --bad: #ef5b5b;
+      --bg: #081226;
+      --bg-2: #0d1b34;
+      --panel: #111f3d;
+      --panel-2: #16284c;
+      --text: #eef4ff;
+      --muted: #aeb9d4;
       --border: rgba(255,255,255,0.1);
+      --accent: #6aa7ff;
+      --good: #2ecc71;
+      --warn: #f5b041;
+      --bad: #ff6b6b;
+      --shadow: 0 12px 30px rgba(0,0,0,0.25);
     }
 
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       font-family: Inter, Arial, sans-serif;
-      background: linear-gradient(180deg, #0b1020 0%, #0f1730 100%);
+      background: linear-gradient(180deg, var(--bg), #0a1630 100%);
       color: var(--text);
     }
 
@@ -35,17 +38,27 @@
     }
 
     .hero {
-      background: linear-gradient(135deg, rgba(124,156,255,0.18), rgba(48,196,141,0.08));
-      border: 1px solid var(--border);
-      border-radius: 24px;
       padding: 24px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      border-radius: 24px;
+      background: linear-gradient(135deg, rgba(106,167,255,0.16), rgba(255,255,255,0.03));
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
     }
 
-    .hero h1 { margin: 0 0 10px; font-size: 34px; }
-    .hero p { margin: 0; color: var(--muted); line-height: 1.5; }
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: 34px;
+      line-height: 1.15;
+    }
 
-    .grid {
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 950px;
+    }
+
+    .grid-2 {
       display: grid;
       grid-template-columns: 1.2fr 0.8fr;
       gap: 20px;
@@ -53,23 +66,22 @@
     }
 
     .panel {
-      background: rgba(18,25,51,0.95);
+      background: rgba(17,31,61,0.96);
       border: 1px solid var(--border);
       border-radius: 22px;
       padding: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      box-shadow: var(--shadow);
     }
 
     .panel h2 {
-      margin-top: 0;
+      margin: 0 0 10px;
       font-size: 20px;
-      margin-bottom: 10px;
     }
 
     .subtle {
       color: var(--muted);
       font-size: 14px;
-      line-height: 1.5;
+      line-height: 1.6;
     }
 
     .uploader-grid {
@@ -79,23 +91,31 @@
       margin-top: 14px;
     }
 
-    .file-box {
+    .upload-box {
       background: var(--panel-2);
-      border: 1px dashed rgba(255,255,255,0.2);
-      border-radius: 16px;
+      border: 1px dashed rgba(255,255,255,0.18);
+      border-radius: 18px;
       padding: 14px;
-      min-height: 140px;
+      min-height: 150px;
     }
 
-    .file-box h3 { margin-top: 0; font-size: 15px; }
-    .file-box input { width: 100%; margin: 10px 0; }
+    .upload-box h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+
+    .upload-box input {
+      width: 100%;
+      margin: 8px 0 10px;
+    }
+
     .file-status {
-      font-size: 13px;
       color: var(--muted);
+      font-size: 13px;
       word-break: break-word;
     }
 
-    .btn-row {
+    .button-row {
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
@@ -103,36 +123,35 @@
     }
 
     button {
-      background: var(--accent);
-      color: white;
       border: none;
       border-radius: 14px;
       padding: 12px 16px;
-      font-size: 14px;
-      cursor: pointer;
       font-weight: 700;
+      color: white;
+      background: var(--accent);
+      cursor: pointer;
     }
 
-    button.secondary { background: #25315e; }
+    button.secondary { background: #294573; }
     button.ghost { background: transparent; border: 1px solid var(--border); }
 
-    .manual-grid {
+    .form-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 12px;
-      margin-top: 16px;
+      margin-top: 14px;
     }
 
     label {
       display: block;
+      margin-bottom: 6px;
       font-size: 13px;
       color: var(--muted);
-      margin-bottom: 6px;
     }
 
-    input[type="number"], input[type="text"], textarea, select {
+    input[type="number"], input[type="text"], select, textarea {
       width: 100%;
-      background: #0f1730;
+      background: #0d1730;
       color: var(--text);
       border: 1px solid rgba(255,255,255,0.12);
       border-radius: 12px;
@@ -140,7 +159,23 @@
       font-size: 14px;
     }
 
-    textarea { min-height: 160px; resize: vertical; }
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    .codebox {
+      margin-top: 18px;
+      padding: 14px;
+      border-radius: 16px;
+      background: #0d1730;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.55;
+    }
 
     .results-grid {
       display: grid;
@@ -150,86 +185,109 @@
     }
 
     .metric-card {
-      background: linear-gradient(180deg, rgba(124,156,255,0.12), rgba(255,255,255,0.03));
+      background: linear-gradient(180deg, rgba(106,167,255,0.14), rgba(255,255,255,0.03));
       border: 1px solid var(--border);
       border-radius: 18px;
       padding: 16px;
     }
 
-    .metric-card .name {
+    .metric-name {
       color: var(--muted);
       font-size: 13px;
       margin-bottom: 8px;
     }
 
-    .metric-card .value {
+    .metric-value {
       font-size: 26px;
       font-weight: 800;
+      line-height: 1.1;
     }
 
-    .metric-card .comment {
+    .metric-comment {
       margin-top: 8px;
       font-size: 13px;
-      color: var(--muted);
-      line-height: 1.4;
+      line-height: 1.5;
     }
+
+    .good { color: var(--good); }
+    .warn { color: var(--warn); }
+    .bad { color: var(--bad); }
 
     .charts-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
       gap: 18px;
       margin-top: 20px;
     }
 
     .chart-panel {
-      background: rgba(18,25,51,0.95);
+      background: rgba(17,31,61,0.96);
       border: 1px solid var(--border);
       border-radius: 22px;
       padding: 18px;
-      min-height: 340px;
+      height: 380px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
     }
 
-    .report-box, .dictionary-box, .extraction-box {
+    .chart-panel h3 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    .chart-panel canvas {
+      width: 100% !important;
+      height: 300px !important;
+      display: block;
+    }
+
+    .report, .dictionary {
       margin-top: 20px;
-      background: rgba(18,25,51,0.95);
+      background: rgba(17,31,61,0.96);
       border: 1px solid var(--border);
       border-radius: 22px;
-      padding: 18px;
-      line-height: 1.6;
+      padding: 20px;
+      box-shadow: var(--shadow);
     }
 
     .pill {
       display: inline-block;
       padding: 6px 10px;
-      font-size: 12px;
       border-radius: 999px;
+      border: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.04);
       margin-right: 8px;
       margin-bottom: 8px;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.05);
-      color: var(--muted);
     }
-
-    .status-good { color: var(--good); }
-    .status-warn { color: var(--warn); }
-    .status-bad { color: var(--bad); }
 
     .footer {
-      margin: 24px 0 6px;
+      text-align: center;
       color: var(--muted);
       font-size: 13px;
-      text-align: center;
+      padding: 22px 0 8px;
     }
 
-    .mono {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
+    .hidden { display: none; }
 
     @media (max-width: 1100px) {
-      .grid, .charts-grid, .results-grid, .manual-grid, .uploader-grid {
+      .grid-2, .results-grid, .form-grid, .uploader-grid {
         grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-panel {
+        height: 340px;
+      }
+
+      .chart-panel canvas {
+        height: 260px !important;
       }
     }
   </style>
@@ -237,238 +295,192 @@
 <body>
   <div class="container">
     <section class="hero">
-      <h1>Supply Chain Driver & Metrics Calculator</h1>
+      <h1>Supply Chain Driver & Financial Metrics Analyzer</h1>
       <p>
-        Upload up to three financial statements or enter data manually. This app extracts key financial values, computes
-        <strong>Little’s Law, ROE, ROA, APT, INVT, ART, PPET, and Cash-to-Cash Cycle</strong>, and generates visualizations,
-        performance comments, and a supply chain report.
+        Upload three financial statement CSV files or enter values manually. The app extracts statement data,
+        computes Little’s Law, ROE, ROA, APT, INVT, ART, PPET, and Cash-to-Cash Cycle, then generates charts,
+        explanations, and a supply chain performance report. Built as a single-file static app for GitHub Pages.
       </p>
     </section>
 
-    <section class="grid">
+    <section class="grid-2">
       <div class="panel">
         <h2>1) Upload Financial Statements</h2>
         <p class="subtle">
-          Best results come from <strong>text-based PDFs</strong> or CSV files. If your statements are scanned images, browser extraction may be incomplete, so use the manual fields below to correct any values.
+          Best format: CSV files that look like real statements, with columns such as <strong>Item</strong> and <strong>Amount</strong>.
+          This app is optimized for CSV to keep extraction fast and reliable in a browser-only deployment.
         </p>
 
         <div class="uploader-grid">
-          <div class="file-box">
+          <div class="upload-box">
             <h3>Income Statement</h3>
-            <input type="file" id="incomeFile" accept=".pdf,.csv,.txt" />
-            <div class="file-status" id="incomeStatus">No file uploaded.</div>
+            <input id="incomeFile" type="file" accept=".csv" />
+            <div id="incomeStatus" class="file-status">No file selected.</div>
           </div>
-          <div class="file-box">
+          <div class="upload-box">
             <h3>Balance Sheet</h3>
-            <input type="file" id="balanceFile" accept=".pdf,.csv,.txt" />
-            <div class="file-status" id="balanceStatus">No file uploaded.</div>
+            <input id="balanceFile" type="file" accept=".csv" />
+            <div id="balanceStatus" class="file-status">No file selected.</div>
           </div>
-          <div class="file-box">
-            <h3>Cash Flow / Supporting File</h3>
-            <input type="file" id="cashflowFile" accept=".pdf,.csv,.txt" />
-            <div class="file-status" id="cashflowStatus">No file uploaded.</div>
+          <div class="upload-box">
+            <h3>Cash Flow / Operations</h3>
+            <input id="cashflowFile" type="file" accept=".csv" />
+            <div id="cashflowStatus" class="file-status">No file selected.</div>
           </div>
         </div>
 
-        <div class="btn-row">
+        <div class="button-row">
           <button id="extractBtn">Extract and Auto-Fill</button>
-          <button class="secondary" id="sampleBtn">Load Demo Data</button>
-          <button class="ghost" id="clearBtn">Clear</button>
+          <button id="demoBtn" class="secondary">Load Demo Values</button>
+          <button id="clearBtn" class="ghost">Clear</button>
         </div>
 
-        <div class="extraction-box">
-          <h2>Extraction Log</h2>
-          <div id="extractionLog" class="mono subtle">No extraction performed yet.</div>
-        </div>
+        <div id="logBox" class="codebox">No extraction performed yet.</div>
       </div>
 
       <div class="panel">
         <h2>2) Company Profile</h2>
         <div>
           <label for="companyName">Company Name</label>
-          <input type="text" id="companyName" placeholder="Example: Apple, Walmart, Toyota" />
+          <input id="companyName" type="text" placeholder="Example: Apple Inc." />
         </div>
         <div style="margin-top: 12px;">
           <label for="industry">Industry</label>
           <select id="industry">
-            <option value="General">General</option>
-            <option value="Retail">Retail</option>
-            <option value="Manufacturing">Manufacturing</option>
-            <option value="Technology">Technology</option>
-            <option value="Consumer Goods">Consumer Goods</option>
-            <option value="Automotive">Automotive</option>
-            <option value="Pharmaceuticals">Pharmaceuticals</option>
+            <option>General</option>
+            <option>Retail</option>
+            <option>Manufacturing</option>
+            <option>Technology</option>
+            <option>Consumer Goods</option>
+            <option>Automotive</option>
           </select>
         </div>
         <div style="margin-top: 12px;">
-          <label for="demandRate">Demand Rate / Throughput (D) for Little's Law</label>
-          <input type="number" id="demandRate" placeholder="Units per period" step="any" />
+          <label for="demandRate">Demand Rate (D)</label>
+          <input id="demandRate" type="number" step="any" placeholder="Units per period" />
         </div>
         <div style="margin-top: 12px;">
-          <label for="flowTime">Flow Time (T) for Little's Law</label>
-          <input type="number" id="flowTime" placeholder="Periods" step="any" />
+          <label for="flowTime">Flow Time (T)</label>
+          <input id="flowTime" type="number" step="any" placeholder="Periods" />
         </div>
         <div style="margin-top: 12px;">
-          <label for="reportNotes">Optional Analyst Notes</label>
-          <textarea id="reportNotes" placeholder="Add custom notes, assumptions, or industry context here..."></textarea>
+          <label for="notes">Analyst Notes</label>
+          <textarea id="notes" placeholder="Optional assumptions or observations..."></textarea>
         </div>
       </div>
     </section>
 
     <section class="panel" style="margin-top: 20px;">
       <h2>3) Manual Input / Review Extracted Data</h2>
-      <p class="subtle">Edit any values below before calculating. Use average values where possible.</p>
-      <div class="manual-grid">
-        <div>
-          <label>Revenue</label>
-          <input type="number" id="revenue" step="any" />
-        </div>
-        <div>
-          <label>COGS</label>
-          <input type="number" id="cogs" step="any" />
-        </div>
-        <div>
-          <label>Net Income</label>
-          <input type="number" id="netIncome" step="any" />
-        </div>
-        <div>
-          <label>Interest Expense</label>
-          <input type="number" id="interestExpense" step="any" />
-        </div>
-        <div>
-          <label>Tax Rate (0 to 1)</label>
-          <input type="number" id="taxRate" step="any" />
-        </div>
-        <div>
-          <label>Average Inventory</label>
-          <input type="number" id="inventory" step="any" />
-        </div>
-        <div>
-          <label>Average Accounts Receivable</label>
-          <input type="number" id="accountsReceivable" step="any" />
-        </div>
-        <div>
-          <label>Average Accounts Payable</label>
-          <input type="number" id="accountsPayable" step="any" />
-        </div>
-        <div>
-          <label>Average Total Assets</label>
-          <input type="number" id="totalAssets" step="any" />
-        </div>
-        <div>
-          <label>PPE / Net PP&E</label>
-          <input type="number" id="ppe" step="any" />
-        </div>
-        <div>
-          <label>Average Shareholder Equity</label>
-          <input type="number" id="equity" step="any" />
-        </div>
-        <div>
-          <label>Override Little's Law Inventory (optional)</label>
-          <input type="number" id="littleInventoryOverride" step="any" />
-        </div>
+      <p class="subtle">You can upload statement CSVs and then edit any extracted values here before running the analysis.</p>
+
+      <div class="form-grid">
+        <div><label>Revenue</label><input id="revenue" type="number" step="any" /></div>
+        <div><label>COGS</label><input id="cogs" type="number" step="any" /></div>
+        <div><label>Net Income</label><input id="netIncome" type="number" step="any" /></div>
+        <div><label>Interest Expense</label><input id="interestExpense" type="number" step="any" /></div>
+        <div><label>Tax Rate (0 to 1)</label><input id="taxRate" type="number" step="any" /></div>
+        <div><label>Inventory</label><input id="inventory" type="number" step="any" /></div>
+        <div><label>Accounts Receivable</label><input id="accountsReceivable" type="number" step="any" /></div>
+        <div><label>Accounts Payable</label><input id="accountsPayable" type="number" step="any" /></div>
+        <div><label>Total Assets</label><input id="totalAssets" type="number" step="any" /></div>
+        <div><label>PPE / Net PP&E</label><input id="ppe" type="number" step="any" /></div>
+        <div><label>Equity</label><input id="equity" type="number" step="any" /></div>
+        <div><label>Little's Law Inventory Override</label><input id="littleInventoryOverride" type="number" step="any" /></div>
       </div>
 
-      <div class="btn-row">
+      <div class="button-row">
         <button id="analyzeBtn">Analyze Company</button>
-        <button class="secondary" id="downloadJsonBtn">Download Data JSON</button>
-        <button class="secondary" id="downloadReportBtn">Download Report TXT</button>
+        <button id="downloadJsonBtn" class="secondary">Download Data JSON</button>
+        <button id="downloadReportBtn" class="secondary">Download Report TXT</button>
       </div>
     </section>
 
-    <section id="resultsSection" style="display:none;">
-      <div class="results-grid" id="metricCards"></div>
+    <section id="resultsSection" class="hidden">
+      <div id="metricCards" class="results-grid"></div>
 
       <div class="charts-grid">
         <div class="chart-panel">
-          <h2>Operational Efficiency</h2>
+          <h3>Operational Efficiency</h3>
           <canvas id="operationalChart"></canvas>
         </div>
         <div class="chart-panel">
-          <h2>Cash-to-Cash Components</h2>
+          <h3>Cash-to-Cash Components</h3>
           <canvas id="c2cChart"></canvas>
         </div>
         <div class="chart-panel">
-          <h2>Financial Performance</h2>
+          <h3>Financial Performance</h3>
           <canvas id="financialChart"></canvas>
         </div>
         <div class="chart-panel">
-          <h2>Little's Law Flow View</h2>
+          <h3>Little's Law Flow View</h3>
           <canvas id="littleChart"></canvas>
         </div>
       </div>
 
-      <div class="report-box">
+      <div class="report">
         <h2>Automated Supply Chain Performance Report</h2>
         <div id="reportOutput"></div>
       </div>
 
-      <div class="dictionary-box">
+      <div class="dictionary">
         <h2>Metric Dictionary</h2>
         <div id="dictionaryOutput"></div>
       </div>
     </section>
 
-    <div class="footer">
-      Static browser app for GitHub Pages. No backend required.
-    </div>
+    <div class="footer">Single-file static app. Ready for GitHub Pages deployment.</div>
   </div>
 
-  <script type="module">
-    import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.min.mjs';
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.worker.min.mjs';
-
-    const fileRefs = {
+  <script>
+    const fileInputs = {
       income: document.getElementById('incomeFile'),
       balance: document.getElementById('balanceFile'),
       cashflow: document.getElementById('cashflowFile')
     };
 
-    const statusRefs = {
+    const fileStatus = {
       income: document.getElementById('incomeStatus'),
       balance: document.getElementById('balanceStatus'),
       cashflow: document.getElementById('cashflowStatus')
     };
 
-    const extractionLog = document.getElementById('extractionLog');
-    let extractedTexts = { income: '', balance: '', cashflow: '' };
-    let charts = [];
-
-    const inputIds = [
-      'revenue','cogs','netIncome','interestExpense','taxRate','inventory','accountsReceivable',
-      'accountsPayable','totalAssets','ppe','equity','demandRate','flowTime','littleInventoryOverride'
+    const fieldIds = [
+      'revenue', 'cogs', 'netIncome', 'interestExpense', 'taxRate', 'inventory',
+      'accountsReceivable', 'accountsPayable', 'totalAssets', 'ppe', 'equity',
+      'demandRate', 'flowTime', 'littleInventoryOverride'
     ];
 
     const metricDefinitions = {
-      littlesLawInventory: {
+      littleInventory: {
         title: "Little's Law Inventory",
         formula: 'I = D × T',
-        meaning: 'Average inventory implied by demand rate and flow time.'
+        meaning: 'Average inventory or WIP implied by demand rate and flow time.'
       },
       ROE: {
         title: 'Return on Equity (ROE)',
-        formula: 'ROE = Net Income / Average Shareholder Equity',
-        meaning: 'Measures how effectively the company generates profit from shareholder capital.'
+        formula: 'ROE = Net Income / Equity',
+        meaning: 'Shows how effectively shareholder capital generates profit.'
       },
       ROA: {
         title: 'Return on Assets (ROA)',
-        formula: 'ROA = [Net Income + Interest Expense × (1 - Tax Rate)] / Average Total Assets',
-        meaning: 'Measures how efficiently the company uses total assets to generate earnings.'
+        formula: 'ROA = [Net Income + Interest Expense × (1 - Tax Rate)] / Total Assets',
+        meaning: 'Shows how efficiently the company uses assets to generate earnings.'
       },
       APT: {
         title: 'Accounts Payable Turnover (APT)',
-        formula: 'APT = COGS / Average Accounts Payable',
+        formula: 'APT = COGS / Accounts Payable',
         meaning: 'Shows how quickly the firm pays suppliers.'
       },
       INVT: {
         title: 'Inventory Turnover (INVT)',
-        formula: 'INVT = COGS / Average Inventory',
+        formula: 'INVT = COGS / Inventory',
         meaning: 'Shows how efficiently inventory is sold or used.'
       },
       ART: {
         title: 'Accounts Receivable Turnover (ART)',
-        formula: 'ART = Revenue / Average Accounts Receivable',
-        meaning: 'Shows how quickly the company collects cash from customers.'
+        formula: 'ART = Revenue / Accounts Receivable',
+        meaning: 'Shows how quickly the firm collects from customers.'
       },
       PPET: {
         title: 'PP&E Turnover (PPET)',
@@ -478,338 +490,328 @@
       C2C: {
         title: 'Cash-to-Cash Cycle (C2C)',
         formula: 'C2C = Inventory Days + AR Days - AP Days',
-        meaning: 'Measures the time between paying suppliers and collecting cash from customers.'
+        meaning: 'Measures how long cash stays tied up in operations.'
       }
     };
 
-    Object.entries(fileRefs).forEach(([key, input]) => {
+    const patterns = {
+      revenue: ['net sales', 'total revenue', 'revenue', 'sales revenue'],
+      cogs: ['cost of sales', 'cost of goods sold', 'cost of revenue', 'cogs'],
+      netIncome: ['net income', 'net earnings'],
+      interestExpense: ['interest expense', 'finance costs', 'finance cost'],
+      inventory: ['inventories', 'inventory'],
+      accountsReceivable: ['accounts receivable net', 'accounts receivable', 'trade receivables', 'receivables'],
+      accountsPayable: ['accounts payable', 'trade payables', 'payables'],
+      totalAssets: ['total assets'],
+      ppe: ['property plant and equipment net', 'property, plant and equipment net', 'property plant and equipment', 'net ppe', 'ppe'],
+      equity: ['total shareholders equity', 'total shareholder equity', 'shareholders equity', 'stockholders equity', 'total equity'],
+      demandRate: ['demand rate'],
+      flowTime: ['flow time']
+    };
+
+    let extractedTables = { income: [], balance: [], cashflow: [] };
+    let charts = [];
+
+    Object.entries(fileInputs).forEach(([key, input]) => {
       input.addEventListener('change', () => {
         const file = input.files[0];
-        statusRefs[key].textContent = file ? `${file.name} selected.` : 'No file uploaded.';
+        fileStatus[key].textContent = file ? `${file.name} selected.` : 'No file selected.';
       });
     });
 
-    document.getElementById('sampleBtn').addEventListener('click', loadSampleData);
+    document.getElementById('extractBtn').addEventListener('click', handleExtract);
+    document.getElementById('demoBtn').addEventListener('click', loadDemoValues);
     document.getElementById('clearBtn').addEventListener('click', clearAll);
-    document.getElementById('extractBtn').addEventListener('click', extractAndFill);
-    document.getElementById('analyzeBtn').addEventListener('click', analyzeCompany);
-    document.getElementById('downloadJsonBtn').addEventListener('click', downloadJSON);
+    document.getElementById('analyzeBtn').addEventListener('click', analyze);
+    document.getElementById('downloadJsonBtn').addEventListener('click', downloadJson);
     document.getElementById('downloadReportBtn').addEventListener('click', downloadReport);
 
-    function loadSampleData() {
-      document.getElementById('companyName').value = 'Demo Manufacturing Co.';
-      document.getElementById('industry').value = 'Manufacturing';
-      document.getElementById('revenue').value = 1500000;
-      document.getElementById('cogs').value = 900000;
-      document.getElementById('netIncome').value = 140000;
-      document.getElementById('interestExpense').value = 20000;
-      document.getElementById('taxRate').value = 0.25;
-      document.getElementById('inventory').value = 180000;
-      document.getElementById('accountsReceivable').value = 140000;
-      document.getElementById('accountsPayable').value = 100000;
-      document.getElementById('totalAssets').value = 1100000;
-      document.getElementById('ppe').value = 450000;
-      document.getElementById('equity').value = 550000;
-      document.getElementById('demandRate').value = 5000;
-      document.getElementById('flowTime').value = 30;
-      document.getElementById('reportNotes').value = 'Demo dataset for a manufacturing firm. Replace with extracted or actual financial statement values.';
-      extractionLog.textContent = 'Demo data loaded.';
+    function setLog(text) {
+      document.getElementById('logBox').textContent = text;
     }
 
-    function clearAll() {
-      inputIds.forEach(id => document.getElementById(id).value = '');
-      document.getElementById('companyName').value = '';
-      document.getElementById('industry').value = 'General';
-      document.getElementById('reportNotes').value = '';
-      extractionLog.textContent = 'Cleared.';
-      Object.values(fileRefs).forEach(input => input.value = '');
-      Object.values(statusRefs).forEach(el => el.textContent = 'No file uploaded.');
-      document.getElementById('resultsSection').style.display = 'none';
-      extractedTexts = { income: '', balance: '', cashflow: '' };
-      destroyCharts();
-    }
-
-    async function extractAndFill() {
-      extractionLog.textContent = 'Starting extraction...';
+    async function handleExtract() {
       const logs = [];
-      extractedTexts = { income: '', balance: '', cashflow: '' };
+      extractedTables = { income: [], balance: [], cashflow: [] };
 
-      for (const [key, input] of Object.entries(fileRefs)) {
+      for (const [key, input] of Object.entries(fileInputs)) {
         const file = input.files[0];
         if (!file) {
-          logs.push(`${key}: no file uploaded.`);
+          logs.push(`${key}: no file uploaded`);
           continue;
         }
 
         try {
-          const text = await extractTextFromFile(file);
-          extractedTexts[key] = text;
-          logs.push(`${key}: extracted ${text.length} characters.`);
+          const rows = await parseCsvFile(file);
+          extractedTables[key] = rows;
+          logs.push(`${key}: loaded ${rows.length} rows`);
         } catch (err) {
-          logs.push(`${key}: extraction failed - ${err.message}`);
+          logs.push(`${key}: failed - ${err.message}`);
         }
       }
 
-      const combined = `${extractedTexts.income}\n${extractedTexts.balance}\n${extractedTexts.cashflow}`;
-      const parsed = autoParseFinancials(combined);
+      const parsed = parseFromTables(extractedTables);
       applyParsedValues(parsed);
 
       logs.push('');
-      logs.push('Parsed fields:');
-      Object.entries(parsed).forEach(([k, v]) => {
-        logs.push(`${k}: ${v === null ? 'not found' : v}`);
+      logs.push('Mapped values:');
+      Object.entries(parsed).forEach(([key, value]) => logs.push(`${key}: ${value === null ? 'not found' : value}`));
+      setLog(logs.join('\n'));
+    }
+
+    function parseCsvFile(file) {
+      return new Promise((resolve, reject) => {
+        Papa.parse(file, {
+          header: true,
+          skipEmptyLines: true,
+          complete: results => {
+            if (results.errors && results.errors.length > 0) {
+              reject(new Error(results.errors[0].message));
+              return;
+            }
+            resolve(results.data || []);
+          },
+          error: err => reject(err)
+        });
       });
-
-      extractionLog.textContent = logs.join('\n');
     }
 
-    async function extractTextFromFile(file) {
-      const extension = file.name.split('.').pop().toLowerCase();
-
-      if (extension === 'txt' || extension === 'csv') {
-        return await file.text();
-      }
-
-      if (extension === 'pdf') {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        let fullText = '';
-
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items.map(item => item.str).join(' ');
-          fullText += `\n${pageText}`;
-        }
-
-        return fullText;
-      }
-
-      throw new Error('Unsupported file type. Use PDF, CSV, or TXT.');
-    }
-
-    function autoParseFinancials(text) {
-      const cleaned = normalizeText(text);
-
-      return {
-        revenue: findFinancialValue(cleaned, [
-          'total revenue', 'net sales', 'sales revenue', 'revenue'
-        ]),
-        cogs: findFinancialValue(cleaned, [
-          'cost of goods sold', 'cost of sales', 'cost of revenue', 'cogs'
-        ]),
-        netIncome: findFinancialValue(cleaned, [
-          'net income', 'net earnings', 'profit after tax'
-        ]),
-        interestExpense: findFinancialValue(cleaned, [
-          'interest expense', 'finance cost', 'finance costs'
-        ]),
-        taxRate: null,
-        inventory: findFinancialValue(cleaned, [
-          'inventory', 'inventories'
-        ]),
-        accountsReceivable: findFinancialValue(cleaned, [
-          'accounts receivable', 'trade receivables', 'receivables'
-        ]),
-        accountsPayable: findFinancialValue(cleaned, [
-          'accounts payable', 'trade payables', 'payables'
-        ]),
-        totalAssets: findFinancialValue(cleaned, [
-          'total assets'
-        ]),
-        ppe: findFinancialValue(cleaned, [
-          'property plant and equipment', 'property, plant and equipment', 'net ppe', 'ppe'
-        ]),
-        equity: findFinancialValue(cleaned, [
-          'total equity', 'shareholders equity', 'stockholders equity', 'equity'
-        ])
-      };
-    }
-
-    function normalizeText(text) {
-      return text
+    function normalize(str) {
+      return String(str || '')
+        .toLowerCase()
         .replace(/\u00a0/g, ' ')
         .replace(/\s+/g, ' ')
-        .toLowerCase();
+        .trim();
     }
 
-    function findFinancialValue(text, labels) {
-      for (const label of labels) {
-        const escaped = escapeRegex(label);
+    function parseNumber(value) {
+      if (value === null || value === undefined) return null;
+      let s = String(value).trim();
+      if (!s) return null;
+      const negative = s.includes('(') && s.includes(')');
+      s = s.replace(/[,$\s]/g, '').replace(/[()]/g, '');
+      if (!s) return null;
+      const num = Number(s);
+      if (Number.isNaN(num)) return null;
+      return negative ? -num : num;
+    }
 
-        const patterns = [
-          new RegExp(`${escaped}[^\d\-\(]{0,40}(\(?\d[\d,\. ]{0,30}\)?)`, 'i'),
-          new RegExp(`(\(?\d[\d,\. ]{0,30}\)?)\s{0,5}${escaped}`, 'i')
-        ];
-
-        for (const pattern of patterns) {
-          const match = text.match(pattern);
-          if (match) {
-            const num = parseFinancialNumber(match[1]);
-            if (num !== null) return num;
-          }
+    function rowLabel(row) {
+      const keys = Object.keys(row || {});
+      for (const key of keys) {
+        const k = normalize(key);
+        if (['item', 'metric', 'account', 'label', 'description'].includes(k)) {
+          return normalize(row[key]);
         }
+      }
+      return normalize(Object.values(row || {})[0] || '');
+    }
+
+    function rowValue(row) {
+      const keys = Object.keys(row || {});
+      for (const key of keys) {
+        const k = normalize(key);
+        if (['amount_usd_millions', 'amount', 'value', 'usd', 'amount_usd'].includes(k)) {
+          return parseNumber(row[key]);
+        }
+      }
+
+      const values = Object.values(row || {});
+      for (let i = values.length - 1; i >= 0; i--) {
+        const num = parseNumber(values[i]);
+        if (num !== null) return num;
       }
       return null;
     }
 
-    function escapeRegex(str) {
-      return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
+    function parseFromTables(tables) {
+      const allRows = [...tables.income, ...tables.balance, ...tables.cashflow];
+      const parsed = {
+        revenue: null,
+        cogs: null,
+        netIncome: null,
+        interestExpense: null,
+        taxRate: null,
+        inventory: null,
+        accountsReceivable: null,
+        accountsPayable: null,
+        totalAssets: null,
+        ppe: null,
+        equity: null,
+        demandRate: null,
+        flowTime: null
+      };
 
-    function parseFinancialNumber(raw) {
-      if (!raw) return null;
-      let str = String(raw).trim();
-      const isNegative = str.includes('(') && str.includes(')');
-      str = str.replace(/[(),\s]/g, '');
-      if (!str) return null;
-      const value = Number(str.replace(/,/g, ''));
-      if (Number.isNaN(value)) return null;
-      return isNegative ? -value : value;
+      const rowDebug = [];
+
+      for (const row of allRows) {
+        const label = rowLabel(row);
+        const value = rowValue(row);
+        rowDebug.push({ label, value, raw: row });
+
+        if (!label || value === null) continue;
+
+        if (parsed.revenue === null && /(^|)(net sales|total revenue|revenue|sales revenue)(|$)/i.test(label)) {
+          parsed.revenue = value;
+          continue;
+        }
+
+        if (parsed.cogs === null && /(^|)(cost of sales|cost of goods sold|cost of revenue|cogs)(|$)/i.test(label)) {
+          parsed.cogs = value;
+          continue;
+        }
+
+        if (parsed.netIncome === null && /(^|)(net income|net earnings)(|$)/i.test(label)) {
+          parsed.netIncome = value;
+          continue;
+        }
+
+        if (parsed.interestExpense === null && /(^|)(interest expense|finance costs|finance cost)(|$)/i.test(label)) {
+          parsed.interestExpense = value;
+          continue;
+        }
+
+        if (parsed.inventory === null && /(^|)(inventories|inventory)(|$)/i.test(label)) {
+          parsed.inventory = value;
+          continue;
+        }
+
+        if (parsed.accountsReceivable === null && /(^|)(accounts receivable net|accounts receivable|trade receivables|receivables)(|$)/i.test(label)) {
+          parsed.accountsReceivable = value;
+          continue;
+        }
+
+        if (parsed.accountsPayable === null && /(^|)(accounts payable|trade payables|payables)(|$)/i.test(label)) {
+          parsed.accountsPayable = value;
+          continue;
+        }
+
+        if (parsed.totalAssets === null && /(^|)(total assets)(|$)/i.test(label)) {
+          parsed.totalAssets = value;
+          continue;
+        }
+
+        if (parsed.ppe === null && /(^|)(property plant and equipment net|property, plant and equipment net|property plant and equipment|net ppe|ppe)(|$)/i.test(label)) {
+          parsed.ppe = value;
+          continue;
+        }
+
+        if (parsed.equity === null && /(^|)(total shareholders equity|total shareholder equity|shareholders equity|stockholders equity|total equity)(|$)/i.test(label)) {
+          parsed.equity = value;
+          continue;
+        }
+
+        if (parsed.demandRate === null && /(^|)(demand rate)(|$)/i.test(label)) {
+          parsed.demandRate = value;
+          continue;
+        }
+
+        if (parsed.flowTime === null && /(^|)(flow time)(|$)/i.test(label)) {
+          parsed.flowTime = value;
+          continue;
+        }
+      }
+
+      if (parsed.taxRate === null) parsed.taxRate = 0.25;
+
+      parsed.__debugRows = rowDebug.slice(0, 25);
+      return parsed;
     }
 
     function applyParsedValues(parsed) {
       Object.entries(parsed).forEach(([key, value]) => {
-        if (value === null) return;
         const el = document.getElementById(key);
-        if (el && !el.value) el.value = value;
+        if (el && value !== null && el.value === '') {
+          el.value = value;
+        }
       });
     }
 
-    function getNum(id) {
+    function getNumber(id) {
       const value = document.getElementById(id).value;
       return value === '' ? null : Number(value);
     }
 
-    function safeDivide(a, b) {
+    function divide(a, b) {
       if (a === null || b === null || b === 0) return null;
       return a / b;
     }
 
     function fmt(value, percent = false) {
-      if (value === null || Number.isNaN(value) || !Number.isFinite(value)) return 'N/A';
+      if (value === null || !Number.isFinite(value)) return 'N/A';
       if (percent) return `${(value * 100).toFixed(2)}%`;
       return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
     }
 
-    function evaluateMetric(name, value, industry) {
+    function evalMetric(name, value) {
+      if (value === null) return { cls: 'warn', text: 'Not enough data to evaluate.' };
+
       const rules = {
-        INVT: [
-          { check: v => v >= 8, status: 'good', text: 'High inventory turnover suggests efficient inventory movement.' },
-          { check: v => v >= 4, status: 'warn', text: 'Inventory turnover is acceptable but may still be improved.' },
-          { check: v => v < 4, status: 'bad', text: 'Low inventory turnover may signal overstocking or slow-moving goods.' }
-        ],
-        ART: [
-          { check: v => v >= 8, status: 'good', text: 'Receivables are collected quickly.' },
-          { check: v => v >= 4, status: 'warn', text: 'Collections are moderate.' },
-          { check: v => v < 4, status: 'bad', text: 'Collections may be too slow and can pressure working capital.' }
-        ],
-        APT: [
-          { check: v => v >= 8, status: 'warn', text: 'The firm pays suppliers quickly; this can be healthy but may reduce financing flexibility.' },
-          { check: v => v >= 4, status: 'good', text: 'Supplier payment cycle appears balanced.' },
-          { check: v => v < 4, status: 'bad', text: 'Low payable turnover means the company takes longer to pay suppliers.' }
-        ],
-        PPET: [
-          { check: v => v >= 3, status: 'good', text: 'Fixed assets appear to generate revenue efficiently.' },
-          { check: v => v >= 1.5, status: 'warn', text: 'Fixed asset utilization is moderate.' },
-          { check: v => v < 1.5, status: 'bad', text: 'PP&E may be underutilized relative to revenue.' }
-        ],
-        ROA: [
-          { check: v => v >= 0.1, status: 'good', text: 'Assets are generating strong earnings.' },
-          { check: v => v >= 0.05, status: 'warn', text: 'Asset profitability is acceptable but not strong.' },
-          { check: v => v < 0.05, status: 'bad', text: 'Asset profitability is weak.' }
-        ],
-        ROE: [
-          { check: v => v >= 0.15, status: 'good', text: 'Shareholder capital is being used effectively.' },
-          { check: v => v >= 0.08, status: 'warn', text: 'Return on equity is moderate.' },
-          { check: v => v < 0.08, status: 'bad', text: 'Return on equity is relatively weak.' }
-        ],
-        C2C: [
-          { check: v => v <= 30, status: 'good', text: 'Cash conversion cycle is tight and efficient.' },
-          { check: v => v <= 70, status: 'warn', text: 'Cash conversion cycle is manageable but can improve.' },
-          { check: v => v > 70, status: 'bad', text: 'Cash is tied up in operations for a long time.' }
-        ],
-        littlesLawInventory: [
-          { check: v => v !== null, status: 'good', text: 'Little’s Law gives a process-level estimate of required inventory or WIP.' }
-        ]
+        INVT: value >= 8 ? ['good', 'High inventory turnover suggests efficient inventory movement.'] : value >= 4 ? ['warn', 'Inventory turnover is moderate.'] : ['bad', 'Low inventory turnover may indicate slow-moving stock or overstocking.'],
+        ART: value >= 8 ? ['good', 'Receivables are collected quickly.'] : value >= 4 ? ['warn', 'Customer collection speed is average.'] : ['bad', 'Receivable collection looks slow.'],
+        APT: value >= 8 ? ['warn', 'Suppliers are paid quickly; this may reduce payment flexibility.'] : value >= 4 ? ['good', 'Supplier payment timing appears balanced.'] : ['bad', 'The company takes longer to pay suppliers.'],
+        PPET: value >= 3 ? ['good', 'Fixed assets appear productive.'] : value >= 1.5 ? ['warn', 'Fixed asset utilization is moderate.'] : ['bad', 'PP&E may be underutilized.'],
+        ROA: value >= 0.10 ? ['good', 'Assets are generating strong returns.'] : value >= 0.05 ? ['warn', 'Asset profitability is acceptable.'] : ['bad', 'Asset profitability is weak.'],
+        ROE: value >= 0.15 ? ['good', 'Shareholder capital is being used effectively.'] : value >= 0.08 ? ['warn', 'Return on equity is moderate.'] : ['bad', 'Return on equity is relatively weak.'],
+        C2C: value <= 30 ? ['good', 'Cash conversion is tight and efficient.'] : value <= 70 ? ['warn', 'Working capital is manageable but can improve.'] : ['bad', 'Cash is tied up in operations for too long.'],
+        littleInventory: ['good', 'This estimates process inventory or work-in-process implied by throughput and flow time.']
       };
 
-      const group = rules[name] || [];
-      for (const rule of group) {
-        if (rule.check(value)) return rule;
-      }
-      return { status: 'warn', text: `${name} could not be benchmarked.` };
-    }
-
-    function analyzeCompany() {
-      const data = {
-        companyName: document.getElementById('companyName').value.trim() || 'Unnamed Company',
-        industry: document.getElementById('industry').value,
-        revenue: getNum('revenue'),
-        cogs: getNum('cogs'),
-        netIncome: getNum('netIncome'),
-        interestExpense: getNum('interestExpense'),
-        taxRate: getNum('taxRate'),
-        inventory: getNum('inventory'),
-        accountsReceivable: getNum('accountsReceivable'),
-        accountsPayable: getNum('accountsPayable'),
-        totalAssets: getNum('totalAssets'),
-        ppe: getNum('ppe'),
-        equity: getNum('equity'),
-        demandRate: getNum('demandRate'),
-        flowTime: getNum('flowTime'),
-        littleInventoryOverride: getNum('littleInventoryOverride'),
-        reportNotes: document.getElementById('reportNotes').value.trim()
-      };
-
-      const metrics = calculateMetrics(data);
-      renderMetricCards(metrics, data.industry);
-      renderCharts(metrics);
-      renderReport(data, metrics);
-      renderDictionary();
-      document.getElementById('resultsSection').style.display = 'block';
+      const entry = rules[name] || ['warn', 'No benchmark available.'];
+      return { cls: entry[0], text: entry[1] };
     }
 
     function calculateMetrics(data) {
-      const littlesLawInventory = data.littleInventoryOverride ?? ((data.demandRate !== null && data.flowTime !== null) ? data.demandRate * data.flowTime : null);
-      const ROE = safeDivide(data.netIncome, data.equity);
-      const ROA = (data.netIncome !== null && data.interestExpense !== null && data.taxRate !== null && data.totalAssets)
-        ? (data.netIncome + (data.interestExpense * (1 - data.taxRate))) / data.totalAssets
-        : safeDivide(data.netIncome, data.totalAssets);
-      const APT = safeDivide(data.cogs, data.accountsPayable);
-      const INVT = safeDivide(data.cogs, data.inventory);
-      const ART = safeDivide(data.revenue, data.accountsReceivable);
-      const PPET = safeDivide(data.revenue, data.ppe);
-      const inventoryDays = INVT ? 365 / INVT : null;
-      const arDays = ART ? 365 / ART : null;
-      const apDays = APT ? 365 / APT : null;
-      const C2C = (inventoryDays !== null && arDays !== null && apDays !== null) ? inventoryDays + arDays - apDays : null;
-      const profitMargin = safeDivide(data.netIncome, data.revenue);
-      const assetTurnover = safeDivide(data.revenue, data.totalAssets);
+      const littleInventory = data.littleInventoryOverride !== null
+        ? data.littleInventoryOverride
+        : (data.demandRate !== null && data.flowTime !== null ? data.demandRate * data.flowTime : null);
 
+      const ROE = divide(data.netIncome, data.equity);
+      const ROA = (data.netIncome !== null && data.interestExpense !== null && data.taxRate !== null && data.totalAssets !== null)
+        ? (data.netIncome + (data.interestExpense * (1 - data.taxRate))) / data.totalAssets
+        : divide(data.netIncome, data.totalAssets);
+      const APT = divide(data.cogs, data.accountsPayable);
+      const INVT = divide(data.cogs, data.inventory);
+      const ART = divide(data.revenue, data.accountsReceivable);
+      const PPET = divide(data.revenue, data.ppe);
+      const inventoryDays = INVT !== null ? 365 / INVT : null;
+      const arDays = ART !== null ? 365 / ART : null;
+      const apDays = APT !== null ? 365 / APT : null;
+      const C2C = inventoryDays !== null && arDays !== null && apDays !== null ? inventoryDays + arDays - apDays : null;
+      const profitMargin = divide(data.netIncome, data.revenue);
+      const assetTurnover = divide(data.revenue, data.totalAssets);
+
+      return { littleInventory, ROE, ROA, APT, INVT, ART, PPET, inventoryDays, arDays, apDays, C2C, profitMargin, assetTurnover };
+    }
+
+    function collectData() {
       return {
-        littlesLawInventory,
-        ROE,
-        ROA,
-        APT,
-        INVT,
-        ART,
-        PPET,
-        C2C,
-        inventoryDays,
-        arDays,
-        apDays,
-        profitMargin,
-        assetTurnover
+        companyName: document.getElementById('companyName').value.trim() || 'Unnamed Company',
+        industry: document.getElementById('industry').value,
+        revenue: getNumber('revenue'),
+        cogs: getNumber('cogs'),
+        netIncome: getNumber('netIncome'),
+        interestExpense: getNumber('interestExpense'),
+        taxRate: getNumber('taxRate'),
+        inventory: getNumber('inventory'),
+        accountsReceivable: getNumber('accountsReceivable'),
+        accountsPayable: getNumber('accountsPayable'),
+        totalAssets: getNumber('totalAssets'),
+        ppe: getNumber('ppe'),
+        equity: getNumber('equity'),
+        demandRate: getNumber('demandRate'),
+        flowTime: getNumber('flowTime'),
+        littleInventoryOverride: getNumber('littleInventoryOverride'),
+        notes: document.getElementById('notes').value.trim()
       };
     }
 
-    function renderMetricCards(metrics, industry) {
-      const metricCards = document.getElementById('metricCards');
-      metricCards.innerHTML = '';
+    function renderMetricCards(metrics) {
+      const cards = document.getElementById('metricCards');
+      cards.innerHTML = '';
 
       const entries = [
-        ['littlesLawInventory', metrics.littlesLawInventory, false],
+        ['littleInventory', metrics.littleInventory, false],
         ['ROE', metrics.ROE, true],
         ['ROA', metrics.ROA, true],
         ['APT', metrics.APT, false],
@@ -819,24 +821,31 @@
         ['C2C', metrics.C2C, false]
       ];
 
-      entries.forEach(([key, value, isPercent]) => {
+      entries.forEach(([key, value, percent]) => {
         const def = metricDefinitions[key];
-        const evaluation = evaluateMetric(key, value, industry);
+        const evaluation = evalMetric(key, value);
         const card = document.createElement('div');
         card.className = 'metric-card';
         card.innerHTML = `
-          <div class="name">${def.title}</div>
-          <div class="value">${fmt(value, isPercent)}</div>
-          <div class="comment ${classForStatus(evaluation.status)}">${evaluation.text}</div>
+          <div class="metric-name">${def.title}</div>
+          <div class="metric-value">${fmt(value, percent)}</div>
+          <div class="metric-comment ${evaluation.cls}">${evaluation.text}</div>
         `;
-        metricCards.appendChild(card);
+        cards.appendChild(card);
       });
     }
 
-    function classForStatus(status) {
-      if (status === 'good') return 'status-good';
-      if (status === 'bad') return 'status-bad';
-      return 'status-warn';
+    function chartOptions() {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'top' } },
+        layout: { padding: 10 },
+        scales: {
+          x: { ticks: { color: '#dce6ff' }, grid: { color: 'rgba(255,255,255,0.08)' } },
+          y: { ticks: { color: '#dce6ff' }, grid: { color: 'rgba(255,255,255,0.08)' } }
+        }
+      };
     }
 
     function destroyCharts() {
@@ -853,7 +862,7 @@
           labels: ['INVT', 'ART', 'APT', 'PPET'],
           datasets: [{ label: 'Operational Ratios', data: [metrics.INVT, metrics.ART, metrics.APT, metrics.PPET] }]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: chartOptions()
       }));
 
       charts.push(new Chart(document.getElementById('c2cChart'), {
@@ -862,7 +871,7 @@
           labels: ['Inventory Days', 'AR Days', 'AP Days'],
           datasets: [{ label: 'Days', data: [metrics.inventoryDays, metrics.arDays, metrics.apDays] }]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: chartOptions()
       }));
 
       charts.push(new Chart(document.getElementById('financialChart'), {
@@ -871,108 +880,75 @@
           labels: ['ROE', 'ROA', 'Profit Margin', 'Asset Turnover'],
           datasets: [{ label: 'Financial Metrics', data: [metrics.ROE, metrics.ROA, metrics.profitMargin, metrics.assetTurnover] }]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: chartOptions()
       }));
 
       charts.push(new Chart(document.getElementById('littleChart'), {
         type: 'bar',
         data: {
-          labels: ['Little\'s Law Inventory'],
-          datasets: [{ label: 'Implied Inventory', data: [metrics.littlesLawInventory] }]
+          labels: ["Little's Law Inventory"],
+          datasets: [{ label: 'Implied Inventory', data: [metrics.littleInventory] }]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: chartOptions()
       }));
     }
 
     function renderReport(data, metrics) {
-      const reportOutput = document.getElementById('reportOutput');
-      const headline = generateHeadline(metrics);
-      const strengths = generateStrengths(metrics);
-      const risks = generateRisks(metrics);
-      const workingCapitalComment = workingCapitalNarrative(metrics);
+      const output = document.getElementById('reportOutput');
+      const headline = metrics.C2C !== null && metrics.C2C <= 30
+        ? 'The company appears to have an efficient operating cash cycle.'
+        : metrics.C2C !== null && metrics.C2C > 70
+        ? 'The company appears to tie up a meaningful amount of cash in operations.'
+        : 'The company shows a mixed supply chain and financial efficiency profile.';
 
-      reportOutput.innerHTML = `
+      output.innerHTML = `
         <div class="pill">Company: ${escapeHtml(data.companyName)}</div>
         <div class="pill">Industry: ${escapeHtml(data.industry)}</div>
-        <div class="pill">Auto-generated report</div>
-        <p><strong>Overall View:</strong> ${headline}</p>
-        <p><strong>Profitability and Asset Use:</strong> The company reports ROE of <strong>${fmt(metrics.ROE, true)}</strong> and ROA of <strong>${fmt(metrics.ROA, true)}</strong>. This suggests ${profitabilityNarrative(metrics)}.</p>
-        <p><strong>Operations and Flow:</strong> Inventory turnover is <strong>${fmt(metrics.INVT)}</strong>, receivables turnover is <strong>${fmt(metrics.ART)}</strong>, payable turnover is <strong>${fmt(metrics.APT)}</strong>, and PP&E turnover is <strong>${fmt(metrics.PPET)}</strong>. ${operationsNarrative(metrics)}</p>
-        <p><strong>Working Capital:</strong> Inventory days are <strong>${fmt(metrics.inventoryDays)}</strong>, AR days are <strong>${fmt(metrics.arDays)}</strong>, and AP days are <strong>${fmt(metrics.apDays)}</strong>, giving a cash-to-cash cycle of <strong>${fmt(metrics.C2C)}</strong> days. ${workingCapitalComment}</p>
-        <p><strong>Little's Law:</strong> Using I = D × T, the implied average inventory / WIP is <strong>${fmt(metrics.littlesLawInventory)}</strong>. ${littlesNarrative(metrics)}</p>
-        <p><strong>Main Strengths:</strong> ${strengths}</p>
-        <p><strong>Main Risks / Improvement Areas:</strong> ${risks}</p>
-        <p><strong>Analyst Notes:</strong> ${escapeHtml(data.reportNotes || 'No extra analyst notes added.')}</p>
+        <p><strong>Overall view:</strong> ${headline}</p>
+        <p><strong>Profitability:</strong> ROE is <strong>${fmt(metrics.ROE, true)}</strong> and ROA is <strong>${fmt(metrics.ROA, true)}</strong>. This indicates ${profitabilityText(metrics)}.</p>
+        <p><strong>Operations:</strong> Inventory turnover is <strong>${fmt(metrics.INVT)}</strong>, accounts receivable turnover is <strong>${fmt(metrics.ART)}</strong>, accounts payable turnover is <strong>${fmt(metrics.APT)}</strong>, and PP&E turnover is <strong>${fmt(metrics.PPET)}</strong>. ${operationsText(metrics)}</p>
+        <p><strong>Working capital:</strong> Inventory days are <strong>${fmt(metrics.inventoryDays)}</strong>, AR days are <strong>${fmt(metrics.arDays)}</strong>, and AP days are <strong>${fmt(metrics.apDays)}</strong>, giving a C2C cycle of <strong>${fmt(metrics.C2C)}</strong> days. ${c2cText(metrics)}</p>
+        <p><strong>Little's Law:</strong> The implied inventory / WIP level is <strong>${fmt(metrics.littleInventory)}</strong>. ${littleText(metrics)}</p>
+        <p><strong>Analyst notes:</strong> ${escapeHtml(data.notes || 'No additional notes added.')}</p>
       `;
     }
 
-    function generateHeadline(metrics) {
-      if (metrics.C2C !== null && metrics.C2C <= 30 && metrics.ROA !== null && metrics.ROA >= 0.08) {
-        return 'The firm appears operationally efficient with relatively strong cash conversion and healthy asset productivity.';
-      }
-      if (metrics.C2C !== null && metrics.C2C > 70) {
-        return 'The company may be tying up too much cash in working capital, which can weaken supply chain responsiveness and liquidity.';
-      }
-      return 'The company shows a mixed performance profile, with some healthy operating drivers but room for tighter working capital and asset use.';
+    function profitabilityText(metrics) {
+      if (metrics.ROE !== null && metrics.ROE >= 0.15 && metrics.ROA !== null && metrics.ROA >= 0.1) return 'strong profitability from both equity and asset base.';
+      if (metrics.ROE !== null && metrics.ROE >= 0.08) return 'moderate profitability with room to improve capital efficiency.';
+      return 'relatively weak profitability versus the capital employed.';
     }
 
-    function profitabilityNarrative(metrics) {
-      if (metrics.ROE !== null && metrics.ROE >= 0.15 && metrics.ROA !== null && metrics.ROA >= 0.1) return 'strong profitability from both shareholder capital and total asset base.';
-      if (metrics.ROE !== null && metrics.ROE >= 0.08) return 'moderate profitability, though stronger asset or equity returns would improve overall efficiency.';
-      return 'weak profitability relative to the capital employed.';
+    function operationsText(metrics) {
+      const bits = [];
+      if (metrics.INVT !== null) bits.push(metrics.INVT >= 8 ? 'Inventory is moving quickly' : metrics.INVT >= 4 ? 'inventory movement is moderate' : 'inventory movement appears slow');
+      if (metrics.ART !== null) bits.push(metrics.ART >= 8 ? 'cash collection is fast' : metrics.ART >= 4 ? 'cash collection is average' : 'cash collection may be slow');
+      if (metrics.PPET !== null) bits.push(metrics.PPET >= 3 ? 'fixed assets look productive' : 'fixed asset productivity is not especially strong');
+      return bits.length ? bits.join(', ') + '.' : 'Not enough operating metrics were available.';
     }
 
-    function operationsNarrative(metrics) {
-      const parts = [];
-      if (metrics.INVT !== null) parts.push(metrics.INVT >= 8 ? 'Inventory is moving quickly' : metrics.INVT >= 4 ? 'Inventory flow is moderate' : 'Inventory may be moving slowly');
-      if (metrics.ART !== null) parts.push(metrics.ART >= 8 ? 'customer collection is fast' : metrics.ART >= 4 ? 'customer collection is average' : 'customer collection may be slow');
-      if (metrics.PPET !== null) parts.push(metrics.PPET >= 3 ? 'fixed assets are productive' : 'fixed asset productivity is not especially strong');
-      return parts.join(', ') + '.';
+    function c2cText(metrics) {
+      if (metrics.C2C === null) return 'Not enough data was available to compute the full cash cycle.';
+      if (metrics.C2C <= 30) return 'This suggests efficient working capital conversion.';
+      if (metrics.C2C <= 70) return 'This is workable but still leaves room to reduce capital tied up in stock or receivables.';
+      return 'This suggests that cash remains tied up in the operating cycle for a relatively long time.';
     }
 
-    function workingCapitalNarrative(metrics) {
-      if (metrics.C2C === null) return 'Cash conversion could not be fully computed because one or more working capital inputs are missing.';
-      if (metrics.C2C <= 30) return 'This indicates an efficient working capital cycle where cash is recovered quickly from operations.';
-      if (metrics.C2C <= 70) return 'This is manageable, but the firm still has scope to reduce cash tied up in inventory or receivables.';
-      return 'This is long and may indicate too much capital trapped in inventory and receivables relative to supplier credit.';
-    }
-
-    function littlesNarrative(metrics) {
-      if (metrics.littlesLawInventory === null) return 'Little’s Law could not be computed because demand rate and flow time were not both provided.';
-      return 'This value is useful for understanding process flow, average WIP, and how demand and lead time interact inside the supply chain.';
-    }
-
-    function generateStrengths(metrics) {
-      const strengths = [];
-      if (metrics.ROA !== null && metrics.ROA >= 0.1) strengths.push('strong asset profitability');
-      if (metrics.ROE !== null && metrics.ROE >= 0.15) strengths.push('good shareholder return');
-      if (metrics.INVT !== null && metrics.INVT >= 8) strengths.push('high inventory turnover');
-      if (metrics.ART !== null && metrics.ART >= 8) strengths.push('fast receivables collection');
-      if (metrics.C2C !== null && metrics.C2C <= 30) strengths.push('short cash-to-cash cycle');
-      return strengths.length ? strengths.join(', ') : 'No standout strengths were detected from the provided data.';
-    }
-
-    function generateRisks(metrics) {
-      const risks = [];
-      if (metrics.ROA !== null && metrics.ROA < 0.05) risks.push('weak asset profitability');
-      if (metrics.ROE !== null && metrics.ROE < 0.08) risks.push('low return on equity');
-      if (metrics.INVT !== null && metrics.INVT < 4) risks.push('slow inventory movement');
-      if (metrics.ART !== null && metrics.ART < 4) risks.push('slow cash collection from customers');
-      if (metrics.C2C !== null && metrics.C2C > 70) risks.push('long cash-to-cash cycle');
-      if (metrics.PPET !== null && metrics.PPET < 1.5) risks.push('weak fixed asset utilization');
-      return risks.length ? risks.join(', ') : 'No major red flags were detected from the current metrics.';
+    function littleText(metrics) {
+      return metrics.littleInventory === null
+        ? 'Demand rate and flow time were not both available, so Little’s Law could not be fully used.'
+        : 'This connects operating throughput and process time to average inventory levels.';
     }
 
     function renderDictionary() {
-      const dictionaryOutput = document.getElementById('dictionaryOutput');
-      const html = Object.values(metricDefinitions).map(def => `
+      const output = document.getElementById('dictionaryOutput');
+      output.innerHTML = Object.values(metricDefinitions).map(def => `
         <div style="margin-bottom: 16px;">
           <strong>${def.title}</strong><br>
           <span class="subtle">Formula: ${escapeHtml(def.formula)}</span><br>
           <span>${escapeHtml(def.meaning)}</span>
         </div>
       `).join('');
-      dictionaryOutput.innerHTML = html;
     }
 
     function escapeHtml(str) {
@@ -984,42 +960,68 @@
         .replace(/'/g, '&#039;');
     }
 
-    function downloadJSON() {
-      const data = collectCurrentData();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      downloadBlob(blob, 'supply-chain-input-data.json');
+    function analyze() {
+      const data = collectData();
+      const metrics = calculateMetrics(data);
+      renderMetricCards(metrics);
+      renderCharts(metrics);
+      renderReport(data, metrics);
+      renderDictionary();
+      document.getElementById('resultsSection').classList.remove('hidden');
     }
 
-    function downloadReport() {
-      const reportText = document.getElementById('reportOutput').innerText || 'No report generated yet.';
-      const blob = new Blob([reportText], { type: 'text/plain' });
-      downloadBlob(blob, 'supply-chain-report.txt');
+    function loadDemoValues() {
+      document.getElementById('companyName').value = 'Demo Manufacturing Co.';
+      document.getElementById('industry').value = 'Manufacturing';
+      document.getElementById('revenue').value = 1500000;
+      document.getElementById('cogs').value = 900000;
+      document.getElementById('netIncome').value = 140000;
+      document.getElementById('interestExpense').value = 20000;
+      document.getElementById('taxRate').value = 0.25;
+      document.getElementById('inventory').value = 180000;
+      document.getElementById('accountsReceivable').value = 140000;
+      document.getElementById('accountsPayable').value = 100000;
+      document.getElementById('totalAssets').value = 1100000;
+      document.getElementById('ppe').value = 450000;
+      document.getElementById('equity').value = 550000;
+      document.getElementById('demandRate').value = 5000;
+      document.getElementById('flowTime').value = 30;
+      document.getElementById('notes').value = 'Demo values loaded for testing.';
+      setLog('Demo values loaded.');
     }
 
-    function collectCurrentData() {
+    function clearAll() {
+      fieldIds.forEach(id => document.getElementById(id).value = '');
+      document.getElementById('companyName').value = '';
+      document.getElementById('industry').value = 'General';
+      document.getElementById('notes').value = '';
+      Object.values(fileInputs).forEach(input => input.value = '');
+      Object.values(fileStatus).forEach(el => el.textContent = 'No file selected.');
+      extractedTables = { income: [], balance: [], cashflow: [] };
+      destroyCharts();
+      document.getElementById('resultsSection').classList.add('hidden');
+      setLog('Cleared.');
+    }
+
+    function currentPayload() {
       return {
-        companyName: document.getElementById('companyName').value,
-        industry: document.getElementById('industry').value,
-        revenue: getNum('revenue'),
-        cogs: getNum('cogs'),
-        netIncome: getNum('netIncome'),
-        interestExpense: getNum('interestExpense'),
-        taxRate: getNum('taxRate'),
-        inventory: getNum('inventory'),
-        accountsReceivable: getNum('accountsReceivable'),
-        accountsPayable: getNum('accountsPayable'),
-        totalAssets: getNum('totalAssets'),
-        ppe: getNum('ppe'),
-        equity: getNum('equity'),
-        demandRate: getNum('demandRate'),
-        flowTime: getNum('flowTime'),
-        littleInventoryOverride: getNum('littleInventoryOverride'),
-        reportNotes: document.getElementById('reportNotes').value,
-        extractedTexts
+        data: collectData(),
+        extractedTables
       };
     }
 
-    function downloadBlob(blob, filename) {
+    function downloadJson() {
+      const blob = new Blob([JSON.stringify(currentPayload(), null, 2)], { type: 'application/json' });
+      triggerDownload(blob, 'supply-chain-data.json');
+    }
+
+    function downloadReport() {
+      const text = document.getElementById('reportOutput').innerText || 'No report generated yet.';
+      const blob = new Blob([text], { type: 'text/plain' });
+      triggerDownload(blob, 'supply-chain-report.txt');
+    }
+
+    function triggerDownload(blob, filename) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
