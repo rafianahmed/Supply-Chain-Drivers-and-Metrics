@@ -98,14 +98,3 @@ The system generates a written analysis including:
 - Chart.js for data visualization
 - PDF.js for financial statement text extraction
 
-### Deployment
-- GitHub Pages
-
-No backend or server is required.
-
-## How to Run Locally
-
-Clone the repository:
-
-```bash
-git clone https://github.com/yourusername/supply-chain-analyzer.git
